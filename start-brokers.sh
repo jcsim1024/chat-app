@@ -7,6 +7,8 @@ NETWORK_NAME=kafka-network
 # Create the network if it doesn't exist
 #docker network create $NETWORK_NAME 2>/dev/null || true
 
+postgres_hostname=postgres_kc
+keycloak_hostname=kc_19
 #zookeeper
 zookeeper_hostname=zookeeper-0
 zookeeper_admin_port=2182
@@ -142,6 +144,34 @@ EOF
   tchiotludo/akhq:0.20.0
 }
 
+up_keycloak(){
+  docker run -d \
+  --name="$keycloak_hostname" \
+  --network=$NETWORK_NAME \
+  -p 8880:8080 \
+  -p 8443:8443 \
+  -p 9990:9990 \
+  -e DB_VENDOR=POSTGRES \
+  -e DB_ADDR=postgres \
+  -e DB_DATABASE=keycloak \
+  -e DB_USER=keycloak \
+  -e DB_SCHEMA=public \
+  -e DB_PASSWORD=password \
+  -e KEYCLOAK_ADMIN=admin \
+  -e KEYCLOAK_ADMIN_PASSWORD=admin \
+  -e KEYCLOAK_HTTP_RELATIVE_PATH=/auth \
+  quay.io/keycloak/keycloak:19.0.3 start-dev --features-disabled=admin2 --http-relative-path /auth
+}
+
+up_postgres(){
+  docker run -d \
+  --name="$postgres_hostname" \
+  --network=$NETWORK_NAME \
+  -e POSTGRES_DB=keycloak \
+  -e POSTGRES_USER=keycloak \
+  -e POSTGRES_PASSWORD=password \
+  postgres
+}
 # function to force remove container and volume if exists with name
 down() {
   docker rm -f -v $1 2>/dev/null || true
@@ -150,6 +180,12 @@ down() {
 restart_all() {
   down $zookeeper_hostname
   up_zookeeper
+
+  down $keycloak_hostname
+  down $postgres_hostname
+
+  up_keycloak
+  up_postgres
 
   restart_kafka $kafka_number_of_brokers
 
@@ -181,7 +217,7 @@ run_application() {
         wait_for_zookeeper_and_kafka
     fi
 }
-pwd
+
 run_application $1
 ## pause container
 #docker pause $kafka_hostname

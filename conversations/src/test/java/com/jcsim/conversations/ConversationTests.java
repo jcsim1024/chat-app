@@ -1,4 +1,4 @@
-package com.jcsim.chatapp;
+package com.jcsim.conversations;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -31,7 +31,7 @@ class ChatappApplicationTests {
         try {
             // Specify the shell command in an array
             // so the ProcessBuilder treats the entire string as the command to execute
-            String[] shellCommand = {"/bin/bash", "-c", "source streaming/start-brokers.sh && wait_for_zookeeper_and_kafka"};
+            String[] shellCommand = {"/bin/bash", "-c", "source ../start-brokers.sh && wait_for_zookeeper_and_kafka"};
 
             // Create and start the process
             ProcessBuilder processBuilder = new ProcessBuilder(shellCommand);
